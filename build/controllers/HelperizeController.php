@@ -13,15 +13,17 @@ use yii\helpers\FileHelper;
 
 /**
  * HelperizeController is there to help to generate helper classes
- *
- * @author Carsten Brandt <mail@cebe.cc>
- * @author Alexander Makarov <sam@rmcreative.ru>
  * @since 2.0
  */
 class HelperizeController extends Controller
 {
 	public $defaultAction = 'helperize';
 
+	/**
+	 * Generates Helper classes from BaseHelper classes
+	 *
+	 * @param null $root the directory to parse files from.
+	 */	
 	public function actionHelperize($root=null)
 	{		
 		$files = $this->findHelpers($root);
@@ -30,7 +32,11 @@ class HelperizeController extends Controller
 			$this->helperize($file);
 		}
 	}
-	
+	/**
+	 * Generates Helper classes from BaseHelper classes
+	 *
+	 * @param null $root the directory to parse files from.
+	 */
 	public function actionRemoveStatic($root=null)
 	{		
 		$files = $this->findHelpers($root);
@@ -39,21 +45,31 @@ class HelperizeController extends Controller
 			$this->removeStatic($file);
 		}
 	}
-
-	private function removeStatic($fileName)
+	/**
+	 * Convert static function/variables to instance functions/variables
+	 *
+	 * @param null $path the file name of class
+	 */
+	private function removeStatic($path)
 	{
-		$text = file_get_contents($fileName, true);		
-		$text = str_replace('static ', '', $text);
-		$text = str_replace('self::$', '$this->', $text);
-		$text = str_replace('self::' , '$this->', $text);
-		$text = str_replace('static::$', '$this->', $text);
-		$this->save($fileName , $text);
+		$ss = new Sourcer();
+		$ss->source = file_get_contents($path, true);		
+		$ss->source = str_replace('static ', '', $ss->source);
+		$ss->source = str_replace('self::$', '$this->', $ss->source);
+		$ss->source = str_replace('self::' , '$this->', $ss->source);
+		$ss->source = str_replace('static::$', '$this->', $ss->source);
+		$ss->save($path);
 	}
-
+	/**
+	 * Create Helper class
+	 * @param null $path the file name of class
+	 */	
 	private function helperize($path)
 	{
 		$text = file_get_contents($path, true);
-		$mm = $this->match('#(/\*\* (?:[^/]|/[^*])*? \*/) \s+ public (?:\s+static)? \s+ function \s+ (\w(?:\w|\d|_)*) \s* \( (.*?) \) \s*? \n#Ssx',$text);
+		$pattern = '#(/\*\* (?:[^/]|/[^*])*? \*/) \s+ public (?:\s+static)? \s+ function \s+ (\w(?:\w|\d|_)*) \s* \( (.*?) \) \s*? \n#Ssx';
+		preg_match_all($pattern, $text, $matches,PREG_SET_ORDER);
+		
 
 		$cname = $this->findClassName($path);
 
@@ -73,26 +89,23 @@ class HelperizeController extends Controller
 		$ss->addLine(  '	public static function init($helper) {');
 		$ss->addLine(  '		self::$helper = $helper;');
 		$ss->addLine(  '	}');
-		foreach ($mm as $m1) {
-			$ss->addLine('	%s',array(trim($m1[1])));
-			$ss->addLine('	public static function %s(%s)',array($m1[2],$m1[3]));
+		foreach ($matches as $mm) {
+			$ss->addLine('	%s',array(trim($mm[1])));
+			$ss->addLine('	public static function %s(%s)',array($mm[2],$mm[3]));
 			$ss->addLine('	{');
-
-
-			$ss->addLine('		return self::$helper->%s(%s);', array($m1[2],$this->removeValues($m1[3])));
+			$ss->addLine('		return self::$helper->%s(%s);', array($mm[2],$this->removeValues($mm[3])));
 			$ss->addLine('	}');
 		}
 		$ss->addLine(  '}');
 		$ss->addLine(  '%s::init(new Base%s());',array($cname,$cname));
-		$this->save( $this->findFilePhp( $this->findDirHelper($path), $cname),$ss->getSource() );
+		$ss->save( $this->findSource( dirname($path), $cname) );
 	}
 
-	private function match($pattern, $text)
-	{
-		preg_match_all($pattern, $text, $matches,PREG_SET_ORDER);
-		return $matches;
-	}
-
+	/**
+	 * Find the BaseHelper class name
+	 *
+	 * @param string $path BaseHelper source file path
+	 */
 	private function findClassName($path)
 	{
 		$name = basename($path);
@@ -101,23 +114,21 @@ class HelperizeController extends Controller
 		return $name;
 	}
 
-	private function findDirHelper($path)
+	/**
+	 * Find source filem name
+	 * @param string path The directory
+	 * @param string name The class name
+	 */
+	private function findSource($path,$name)
 	{
-		return dirname($path);
+		return sprintf('%s/%s.php',$path,$name);
 	}
-
-	private function findFilePhp($path,$cname)
-	{
-		return sprintf('%s/%s.php',$path,$cname);
-	}
-
-	private function save($fileName,$text)
-	{
-		$ff = fopen($fileName , "w");
-		fwrite($ff,$text);
-		fclose($ff);
-	}
-
+	
+	/**
+	 * Remove values from parametrs
+	 * @param  string $ss The parameters string
+	 * @return string $ss The parameters string without values
+	 */
 	private function removeValues($ss)
 	{
 		$args = explode(',',$ss);
@@ -131,6 +142,11 @@ class HelperizeController extends Controller
 		return implode(',',$args);
 	}
 	
+	/**
+	 * Find BaseHelper sources in root.
+	 * @param null $root the directory to parse files from. Defualt to YII_PATH\helpers
+	 * @param array BaseHelper sources in root
+	 */
 	private function findHelpers($root = null)
 	{
 		if ($root === null) {
@@ -155,15 +171,32 @@ class HelperizeController extends Controller
 	}
 }
 
-class Sourcer {
+/**
+ * Sourcer holds source code
+ * @property string $source The source text
+ */
+class Sourcer extends \yii\base\Object 
+{
+	private $_source = '';
+	
+	/**
+	 * Create a new Sourcer
+	 */
 	public function __construct() {
 	}
 
+	/**
+	 * Clear the source
+	 */
 	public function clear()
 	{
 		$this->_source = '';
 	}
-
+	/**
+	 * Add line to the source
+	 * @param $fmt The format string
+	 * @param array $params The parameters
+	 */
 	public function addLine($fmt,$params=array())
 	{
 		$this->_source .= vsprintf($fmt,$params);
@@ -174,7 +207,20 @@ class Sourcer {
 	{
 		return $this->_source;
 	}
-
-	private $_source = '';
+	
+	public function setSource($value)
+	{
+		$this->_source = $value;
+	}
+	/**
+	 * Save the source in filename
+	 * @param string $filename The filename
+	 */
+	public function save($filename) 	
+	{
+		$ff = fopen($filename , "w");
+		fwrite($ff , $this->_source);
+		fclose($ff);	
+	}
 }
 
