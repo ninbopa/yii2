@@ -26,7 +26,7 @@ class BaseStringHelper
 	 * @param string $string the string being measured for length
 	 * @return integer the number of bytes in the given string.
 	 */
-	public static function strlen($string)
+	public function strlen($string)
 	{
 		return mb_strlen($string, '8bit');
 	}
@@ -40,7 +40,7 @@ class BaseStringHelper
 	 * @return string the extracted part of string, or FALSE on failure or an empty string.
 	 * @see http://www.php.net/manual/en/function.substr.php
 	 */
-	public static function substr($string, $start, $length)
+	public function substr($string, $start, $length)
 	{
 		return mb_substr($string, $start, $length, '8bit');
 	}
@@ -57,7 +57,7 @@ class BaseStringHelper
 	 * @return string the trailing name component of the given path.
 	 * @see http://www.php.net/manual/en/function.basename.php
 	 */
-	public static function basename($path, $suffix = '')
+	public function basename($path, $suffix = '')
 	{
 		if (($len = mb_strlen($suffix)) > 0 && mb_substr($path, -$len) == $suffix) {
 			$path = mb_substr($path, 0, -$len);
@@ -77,7 +77,7 @@ class BaseStringHelper
 	 * @return string the parent directory's path.
 	 * @see http://www.php.net/manual/en/function.basename.php
 	 */
-	public static function dirname($path)
+	public function dirname($path)
 	{
 		$pos = mb_strrpos(str_replace('\\', '/', $path), '/');
 		if ($pos !== false) {
@@ -99,7 +99,7 @@ class BaseStringHelper
 	 * formats, a string is returned.
 	 * @throws InvalidParamException if the format is invalid.
 	 */
-	public static function diff($lines1, $lines2, $format = 'inline')
+	public function diff($lines1, $lines2, $format = 'inline')
 	{
 		if (!is_array($lines1)) {
 			$lines1 = explode("\n", $lines1);

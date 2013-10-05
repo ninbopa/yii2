@@ -31,7 +31,7 @@ class BaseJson
 	 * [[http://www.php.net/manual/en/function.json-encode.php]]
 	 * @return string the encoding result
 	 */
-	public static function encode($value, $options = 0)
+	public function encode($value, $options = 0)
 	{
 		$expressions = array();
 		$value = static::processData($value, $expressions, uniqid());
@@ -46,7 +46,7 @@ class BaseJson
 	 * @return mixed the PHP data
 	 * @throws InvalidParamException if there is any decoding error
 	 */
-	public static function decode($json, $asArray = true)
+	public function decode($json, $asArray = true)
 	{
 		if (is_array($json)) {
 			throw new InvalidParamException('Invalid JSON data.');
@@ -79,7 +79,7 @@ class BaseJson
 	 * @param string $expPrefix a prefix internally used to handle JS expressions
 	 * @return mixed the processed data
 	 */
-	protected static function processData($data, &$expressions, $expPrefix)
+	protected function processData($data, &$expressions, $expPrefix)
 	{
 		if (is_array($data)) {
 			foreach ($data as $key => $value) {

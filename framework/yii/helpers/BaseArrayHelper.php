@@ -56,7 +56,7 @@ class BaseArrayHelper
 	 * @param boolean $recursive whether to recursively converts properties which are objects into arrays.
 	 * @return array the array representation of the object
 	 */
-	public static function toArray($object, $properties = array(), $recursive = true)
+	public function toArray($object, $properties = array(), $recursive = true)
 	{
 		if (!empty($properties) && is_object($object)) {
 			$className = get_class($object);
@@ -102,7 +102,7 @@ class BaseArrayHelper
 	 * arrays via third argument, fourth argument etc.
 	 * @return array the merged array (the original arrays are not changed.)
 	 */
-	public static function merge($a, $b)
+	public function merge($a, $b)
 	{
 		$args = func_get_args();
 		$res = array_shift($args);
@@ -112,7 +112,7 @@ class BaseArrayHelper
 				if (is_integer($k)) {
 					isset($res[$k]) ? $res[] = $v : $res[$k] = $v;
 				} elseif (is_array($v) && isset($res[$k]) && is_array($res[$k])) {
-					$res[$k] = self::merge($res[$k], $v);
+					$res[$k] = $this->merge($res[$k], $v);
 				} else {
 					$res[$k] = $v;
 				}
@@ -145,7 +145,7 @@ class BaseArrayHelper
 	 * @param mixed $default the default value to be returned if the specified key does not exist
 	 * @return mixed the value of the element if found, default value otherwise
 	 */
-	public static function getValue($array, $key, $default = null)
+	public function getValue($array, $key, $default = null)
 	{
 		if ($key instanceof \Closure) {
 			return $key($array, $default);
@@ -175,7 +175,7 @@ class BaseArrayHelper
 	 * @param mixed $default the default value to be returned if the specified key does not exist
 	 * @return mixed|null the value of the element if found, default value otherwise
 	 */
-	public static function remove(&$array, $key, $default = null)
+	public function remove(&$array, $key, $default = null)
 	{
 		if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array))) {
 			$value = $array[$key];
@@ -218,7 +218,7 @@ class BaseArrayHelper
 	 * @param string|\Closure $key the column name or anonymous function whose result will be used to index the array
 	 * @return array the indexed array
 	 */
-	public static function index($array, $key)
+	public function index($array, $key)
 	{
 		$result = array();
 		foreach ($array as $element) {
@@ -254,7 +254,7 @@ class BaseArrayHelper
 	 * will be re-indexed with integers.
 	 * @return array the list of column values
 	 */
-	public static function getColumn($array, $name, $keepKeys = true)
+	public function getColumn($array, $name, $keepKeys = true)
 	{
 		$result = array();
 		if ($keepKeys) {
@@ -311,7 +311,7 @@ class BaseArrayHelper
 	 * @param string|\Closure $group
 	 * @return array
 	 */
-	public static function map($array, $from, $to, $group = null)
+	public function map($array, $from, $to, $group = null)
 	{
 		$result = array();
 		foreach ($array as $element) {
@@ -345,7 +345,7 @@ class BaseArrayHelper
 	 * @throws InvalidParamException if the $descending or $sortFlag parameters do not have
 	 * correct number of elements as that of $key.
 	 */
-	public static function multisort(&$array, $key, $descending = false, $sortFlag = SORT_REGULAR, $caseSensitive = true)
+	public function multisort(&$array, $key, $descending = false, $sortFlag = SORT_REGULAR, $caseSensitive = true)
 	{
 		$keys = is_array($key) ? $key : array($key);
 		if (empty($keys) || empty($array)) {
@@ -404,7 +404,7 @@ class BaseArrayHelper
 	 * @return array the encoded data
 	 * @see http://www.php.net/manual/en/function.htmlspecialchars.php
 	 */
-	public static function htmlEncode($data, $valuesOnly = true, $charset = null)
+	public function htmlEncode($data, $valuesOnly = true, $charset = null)
 	{
 		if ($charset === null) {
 			$charset = Yii::$app->charset;
@@ -433,7 +433,7 @@ class BaseArrayHelper
 	 * @return array the decoded data
 	 * @see http://www.php.net/manual/en/function.htmlspecialchars-decode.php
 	 */
-	public static function htmlDecode($data, $valuesOnly = true)
+	public function htmlDecode($data, $valuesOnly = true)
 	{
 		$d = array();
 		foreach ($data as $key => $value) {

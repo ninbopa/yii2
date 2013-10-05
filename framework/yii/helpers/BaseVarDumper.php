@@ -18,9 +18,9 @@ namespace yii\helpers;
  */
 class BaseVarDumper
 {
-	private static $_objects;
-	private static $_output;
-	private static $_depth;
+	private $_objects;
+	private $_output;
+	private $_depth;
 
 	/**
 	 * Displays a variable.
@@ -30,7 +30,7 @@ class BaseVarDumper
 	 * @param integer $depth maximum depth that the dumper should go into the variable. Defaults to 10.
 	 * @param boolean $highlight whether the result should be syntax-highlighted
 	 */
-	public static function dump($var, $depth = 10, $highlight = false)
+	public function dump($var, $depth = 10, $highlight = false)
 	{
 		echo static::dumpAsString($var, $depth, $highlight);
 	}
@@ -44,82 +44,82 @@ class BaseVarDumper
 	 * @param boolean $highlight whether the result should be syntax-highlighted
 	 * @return string the string representation of the variable
 	 */
-	public static function dumpAsString($var, $depth = 10, $highlight = false)
+	public function dumpAsString($var, $depth = 10, $highlight = false)
 	{
-		self::$_output = '';
-		self::$_objects = array();
-		self::$_depth = $depth;
-		self::dumpInternal($var, 0);
+		$this->_output = '';
+		$this->_objects = array();
+		$this->_depth = $depth;
+		$this->dumpInternal($var, 0);
 		if ($highlight) {
-			$result = highlight_string("<?php\n" . self::$_output, true);
-			self::$_output = preg_replace('/&lt;\\?php<br \\/>/', '', $result, 1);
+			$result = highlight_string("<?php\n" . $this->_output, true);
+			$this->_output = preg_replace('/&lt;\\?php<br \\/>/', '', $result, 1);
 		}
-		return self::$_output;
+		return $this->_output;
 	}
 
 	/**
 	 * @param mixed $var variable to be dumped
 	 * @param integer $level depth level
 	 */
-	private static function dumpInternal($var, $level)
+	private function dumpInternal($var, $level)
 	{
 		switch (gettype($var)) {
 			case 'boolean':
-				self::$_output .= $var ? 'true' : 'false';
+				$this->_output .= $var ? 'true' : 'false';
 				break;
 			case 'integer':
-				self::$_output .= "$var";
+				$this->_output .= "$var";
 				break;
 			case 'double':
-				self::$_output .= "$var";
+				$this->_output .= "$var";
 				break;
 			case 'string':
-				self::$_output .= "'" . addslashes($var) . "'";
+				$this->_output .= "'" . addslashes($var) . "'";
 				break;
 			case 'resource':
-				self::$_output .= '{resource}';
+				$this->_output .= '{resource}';
 				break;
 			case 'NULL':
-				self::$_output .= "null";
+				$this->_output .= "null";
 				break;
 			case 'unknown type':
-				self::$_output .= '{unknown}';
+				$this->_output .= '{unknown}';
 				break;
 			case 'array':
-				if (self::$_depth <= $level) {
-					self::$_output .= 'array(...)';
+				if ($this->_depth <= $level) {
+					$this->_output .= 'array(...)';
 				} elseif (empty($var)) {
-					self::$_output .= 'array()';
+					$this->_output .= 'array()';
 				} else {
 					$keys = array_keys($var);
 					$spaces = str_repeat(' ', $level * 4);
-					self::$_output .= "array\n" . $spaces . '(';
+					$this->_output .= "array\n" . $spaces . '(';
 					foreach ($keys as $key) {
-						self::$_output .= "\n" . $spaces . '    ';
-						self::dumpInternal($key, 0);
-						self::$_output .= ' => ';
-						self::dumpInternal($var[$key], $level + 1);
+						$this->_output .= "\n" . $spaces . '    ';
+						$this->dumpInternal($key, 0);
+						$this->_output .= ' => ';
+						$this->dumpInternal($var[$key], $level + 1);
 					}
-					self::$_output .= "\n" . $spaces . ')';
+					$this->_output .= "\n" . $spaces . ')';
 				}
 				break;
 			case 'object':
-				if (($id = array_search($var, self::$_objects, true)) !== false) {
-					self::$_output .= get_class($var) . '#' . ($id + 1) . '(...)';
-				} elseif (self::$_depth <= $level) {
-					self::$_output .= get_class($var) . '(...)';
+				if (($id = array_search($var, $this->_objects, true)) !== false) {
+					$this->_output .= get_class($var) . '#' . ($id + 1) . '(...)';
+				} elseif ($this->_depth <= $level) {
+					$this->_output .= get_class($var) . '(...)';
 				} else {
-					$id = array_push(self::$_objects, $var);
+					$id = array_push($this->_objects, $var);
 					$className = get_class($var);
 					$members = (array)$var;
 					$spaces = str_repeat(' ', $level * 4);
-					self::$_output .= "$className#$id\n" . $spaces . '(';
+					$this->_output .= "$className#$id\n" . $spaces . '(';
 					foreach ($members as $key => $value) {
 						$keyDisplay = strtr(trim($key), array("\0" => ':'));
-						self::$_output .= "\n" . $spaces . "    [$keyDisplay] => ";
-						self::dumpInternal($value, $level + 1);
+						$this->_output .= "\n" . $spaces . "    [$keyDisplay] => ";
+						$this->dumpInternal($value, $level + 1);
 					}
-					self::$_output .= "\n" . $spaces . ')';
+					$this->_output .= "\n" . $spaces . ')';
 				}
 				break;
 		}

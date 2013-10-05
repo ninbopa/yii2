@@ -23,7 +23,7 @@ class BaseInflector
 	 * @var array the rules for converting a word into its plural form.
 	 * The keys are the regular expressions and the values are the corresponding replacements.
 	 */
-	public static $plurals = array(
+	public $plurals = array(
 		'/([nrlm]ese|deer|fish|sheep|measles|ois|pox|media)$/i' => '\1',
 		'/^(sea[- ]bass)$/i' => '\1',
 		'/(m)ove$/i' => '\1oves',
@@ -58,7 +58,7 @@ class BaseInflector
 	 * @var array the rules for converting a word into its singular form.
 	 * The keys are the regular expressions and the values are the corresponding replacements.
 	 */
-	public static $singulars = array(
+	public $singulars = array(
 		'/([nrlm]ese|deer|fish|sheep|measles|ois|pox|media|ss)$/i' => '\1',
 		'/^(sea[- ]bass)$/i' => '\1',
 		'/(s)tatuses$/i' => '\1tatus',
@@ -102,7 +102,7 @@ class BaseInflector
 	 * @var array the special rules for converting a word between its plural form and singular form.
 	 * The keys are the special words in singular form, and the values are the corresponding plural form.
 	 */
-	public static $specials = array(
+	public $specials = array(
 		'atlas' => 'atlases',
 		'beef' => 'beefs',
 		'brother' => 'brothers',
@@ -218,7 +218,7 @@ class BaseInflector
 	/**
 	 * @var array map of special chars and its translation. This is used by [[slug()]].
 	 */
-	public static $transliteration = array(
+	public $transliteration = array(
 		'/ä|æ|ǽ/' => 'ae',
 		'/ö|œ/' => 'oe',
 		'/ü/' => 'ue',
@@ -278,12 +278,12 @@ class BaseInflector
 	 * @param string $word the word to be pluralized
 	 * @return string the pluralized word
 	 */
-	public static function pluralize($word)
+	public function pluralize($word)
 	{
-		if (isset(self::$specials[$word])) {
-			return self::$specials[$word];
+		if (isset($this->specials[$word])) {
+			return $this->specials[$word];
 		}
-		foreach (static::$plurals as $rule => $replacement) {
+		foreach ($this->plurals as $rule => $replacement) {
 			if (preg_match($rule, $word)) {
 				return preg_replace($rule, $replacement, $word);
 			}
@@ -296,13 +296,13 @@ class BaseInflector
 	 * @param string $word the english word to singularize
 	 * @return string Singular noun.
 	 */
-	public static function singularize($word)
+	public function singularize($word)
 	{
-		$result = array_search($word, self::$specials, true);
+		$result = array_search($word, $this->specials, true);
 		if ($result !== false) {
 			return $result;
 		}
-		foreach (static::$singulars as $rule => $replacement) {
+		foreach ($this->singulars as $rule => $replacement) {
 			if (preg_match($rule, $word)) {
 				return preg_replace($rule, $replacement, $word);
 			}
@@ -317,7 +317,7 @@ class BaseInflector
 	 * @param bool $ucAll whether to set all words to uppercase
 	 * @return string
 	 */
-	public static function titleize($words, $ucAll = false)
+	public function titleize($words, $ucAll = false)
 	{
 		$words = static::humanize(static::underscore($words), $ucAll);
 		return $ucAll ? ucwords($words) : ucfirst($words);
@@ -332,7 +332,7 @@ class BaseInflector
 	 * @param string $word the word to CamelCase
 	 * @return string
 	 */
-	public static function camelize($word)
+	public function camelize($word)
 	{
 		return str_replace(' ', '', ucwords(preg_replace('/[^A-Z^a-z^0-9]+/', ' ', $word)));
 	}
@@ -344,7 +344,7 @@ class BaseInflector
 	 * @param boolean $ucwords whether to capitalize the first letter in each word
 	 * @return string the resulting words
 	 */
-	public static function camel2words($name, $ucwords = true)
+	public function camel2words($name, $ucwords = true)
 	{
 		$label = trim(strtolower(str_replace(array(
 			'-',
@@ -362,7 +362,7 @@ class BaseInflector
 	 * @param string $separator the character used to concatenate the words in the ID
 	 * @return string the resulting ID
 	 */
-	public static function camel2id($name, $separator = '-')
+	public function camel2id($name, $separator = '-')
 	{
 		if ($separator === '_') {
 			return trim(strtolower(preg_replace('/(?<![A-Z])[A-Z]/', '_\0', $name)), '_');
@@ -379,7 +379,7 @@ class BaseInflector
 	 * @param string $separator the character used to separate the words in the ID
 	 * @return string the resulting CamelCase name
 	 */
-	public static function id2camel($id, $separator = '-')
+	public function id2camel($id, $separator = '-')
 	{
 		return str_replace(' ', '', ucwords(implode(' ', explode($separator, $id))));
 	}
@@ -389,7 +389,7 @@ class BaseInflector
 	 * @param string $words the word(s) to underscore
 	 * @return string
 	 */
-	public static function underscore($words)
+	public function underscore($words)
 	{
 		return strtolower(preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $words));
 	}
@@ -400,7 +400,7 @@ class BaseInflector
 	 * @param bool $ucAll whether to set all words to uppercase or not
 	 * @return string
 	 */
-	public static function humanize($word, $ucAll = false)
+	public function humanize($word, $ucAll = false)
 	{
 		$word = str_replace('_', ' ', preg_replace('/_id$/', '', $word));
 		return $ucAll ? ucwords($word) : ucfirst($word);
@@ -414,7 +414,7 @@ class BaseInflector
 	 * @param string $word to lowerCamelCase
 	 * @return string
 	 */
-	public static function variablize($word)
+	public function variablize($word)
 	{
 		$word = static::camelize($word);
 		return strtolower($word[0]) . substr($word, 1);
@@ -426,7 +426,7 @@ class BaseInflector
 	 * @param string $className the class name for getting related table_name
 	 * @return string
 	 */
-	public static function tableize($className)
+	public function tableize($className)
 	{
 		return static::pluralize(static::underscore($className));
 	}
@@ -439,9 +439,9 @@ class BaseInflector
 	 * @param string $replacement The replacement to use for spaces
 	 * @return string The converted string.
 	 */
-	public static function slug($string, $replacement = '-')
+	public function slug($string, $replacement = '-')
 	{
-		$map = static::$transliteration + array(
+		$map = $this->transliteration + array(
 				'/[^\w\s]/' => ' ',
 				'/\\s+/' => $replacement,
 				'/(?<=[a-z])([A-Z])/' => $replacement . '\\1',
@@ -455,7 +455,7 @@ class BaseInflector
 	 * @param string $tableName
 	 * @return string
 	 */
-	public static function classify($tableName)
+	public function classify($tableName)
 	{
 		return static::camelize(static::singularize($tableName));
 	}
@@ -465,7 +465,7 @@ class BaseInflector
 	 * @param int $number the number to get its ordinal value
 	 * @return string
 	 */
-	public static function ordinalize($number)
+	public function ordinalize($number)
 	{
 		if (in_array(($number % 100), range(11, 13))) {
 			return $number . 'th';

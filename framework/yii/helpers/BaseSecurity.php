@@ -44,6 +44,11 @@ class BaseSecurity
 	const DERIVATION_ITERATIONS = 1000;
 
 	/**
+	 *
+	 */
+	private $keys;
+
+	/**
 	 * Encrypts data.
 	 * @param string $data data to be encrypted.
 	 * @param string $password the encryption password
@@ -51,7 +56,7 @@ class BaseSecurity
 	 * @throws Exception if PHP Mcrypt extension is not loaded or failed to be initialized
 	 * @see decrypt()
 	 */
-	public static function encrypt($data, $password)
+	public function encrypt($data, $password)
 	{
 		$module = static::openCryptModule();
 		$data = static::addPadding($data);
@@ -73,7 +78,7 @@ class BaseSecurity
 	 * @throws Exception if PHP Mcrypt extension is not loaded or failed to be initialized
 	 * @see encrypt()
 	 */
-	public static function decrypt($data, $password)
+	public function decrypt($data, $password)
 	{
 		$module = static::openCryptModule();
 		$ivSize = mcrypt_enc_get_iv_size($module);
@@ -91,9 +96,9 @@ class BaseSecurity
 	* @param string $data the data to pad
 	* @return string the padded data
 	*/
-	protected static function addPadding($data)
+	protected function addPadding($data)
 	{
-		$pad = self::CRYPT_BLOCK_SIZE - (StringHelper::strlen($data) % self::CRYPT_BLOCK_SIZE);
+		$pad = $this->CRYPT_BLOCK_SIZE - (StringHelper::strlen($data) % $this->CRYPT_BLOCK_SIZE);
 		return $data . str_repeat(chr($pad), $pad);
 	}
 
@@ -102,7 +107,7 @@ class BaseSecurity
 	* @param string $data the data to trim
 	* @return string the trimmed data
 	*/
-	protected static function stripPadding($data)
+	protected function stripPadding($data)
 	{
 		$end = StringHelper::substr($data, -1, NULL);
 		$last = ord($end);
@@ -119,18 +124,18 @@ class BaseSecurity
 	* @param string $salt the random salt
 	* @return string the derived key
 	*/
-	protected static function deriveKey($password, $salt)
+	protected function deriveKey($password, $salt)
 	{
 		if (function_exists('hash_pbkdf2')) {
-			return hash_pbkdf2(self::DERIVATION_HASH, $password, $salt, self::DERIVATION_ITERATIONS, self::CRYPT_KEY_SIZE, true);
+			return hash_pbkdf2($this->DERIVATION_HASH, $password, $salt, $this->DERIVATION_ITERATIONS, $this->CRYPT_KEY_SIZE, true);
 		}
-		$hmac = hash_hmac(self::DERIVATION_HASH, $salt . pack('N', 1), $password, true);
+		$hmac = hash_hmac($this->DERIVATION_HASH, $salt . pack('N', 1), $password, true);
 		$xorsum  = $hmac;
-		for ($i = 1; $i < self::DERIVATION_ITERATIONS; $i++) {
-			$hmac = hash_hmac(self::DERIVATION_HASH, $hmac, $password, true);
+		for ($i = 1; $i < $this->DERIVATION_ITERATIONS; $i++) {
+			$hmac = hash_hmac($this->DERIVATION_HASH, $hmac, $password, true);
 			$xorsum ^= $hmac;
 		}
-		return substr($xorsum, 0, self::CRYPT_KEY_SIZE);
+		return substr($xorsum, 0, $this->CRYPT_KEY_SIZE);
 	}
 
 	/**
@@ -143,7 +148,7 @@ class BaseSecurity
 	 * @see validateData()
 	 * @see getSecretKey()
 	 */
-	public static function hashData($data, $key, $algorithm = 'sha256')
+	public function hashData($data, $key, $algorithm = 'sha256')
 	{
 		return hash_hmac($algorithm, $data, $key) . $data;
 	}
@@ -159,7 +164,7 @@ class BaseSecurity
 	 * @return string the real data with the hash stripped off. False if the data is tampered.
 	 * @see hashData()
 	 */
-	public static function validateData($data, $key, $algorithm = 'sha256')
+	public function validateData($data, $key, $algorithm = 'sha256')
 	{
 		$hashSize = StringHelper::strlen(hash_hmac($algorithm, 'test', $key));
 		$n = StringHelper::strlen($data);
@@ -181,21 +186,20 @@ class BaseSecurity
 	 * @param integer $length the length of the key that should be generated if not exists
 	 * @return string the secret key associated with the specified name
 	 */
-	public static function getSecretKey($name, $length = 32)
+	public function getSecretKey($name, $length = 32)
 	{
-		static $keys;
-		$keyFile = Yii::$app->getRuntimePath() . '/keys.php';
-		if ($keys === null) {
-			$keys = array();
+    $keyFile = Yii::$app->getRuntimePath() . '/keys.php';
+		if ($this->keys === null) {
+			$this->keys = array();
 			if (is_file($keyFile)) {
-				$keys = require($keyFile);
+				$this->keys = require($keyFile);
 			}
 		}
-		if (!isset($keys[$name])) {
-			$keys[$name] = static::generateRandomKey($length);
-			file_put_contents($keyFile, "<?php\nreturn " . var_export($keys, true) . ";\n");
+		if (!isset($this->keys[$name])) {
+			$this->keys[$name] = static::generateRandomKey($length);
+			file_put_contents($keyFile, "<?php\nreturn " . var_export($this->keys, true) . ";\n");
 		}
-		return $keys[$name];
+		return $this->keys[$name];
 	}
 
 	/**
@@ -203,7 +207,7 @@ class BaseSecurity
 	 * @param integer $length the length of the key that should be generated
 	 * @return string the generated random key
 	 */
-	public static function generateRandomKey($length = 32)
+	public function generateRandomKey($length = 32)
 	{
 		if (function_exists('openssl_random_pseudo_bytes')) {
 			$key = strtr(base64_encode(openssl_random_pseudo_bytes($length, $strong)), '+/=', '_-.');
@@ -221,7 +225,7 @@ class BaseSecurity
 	 * @throws InvalidConfigException if mcrypt extension is not installed
 	 * @throws Exception if mcrypt initialization fails
 	 */
-	protected static function openCryptModule()
+	protected function openCryptModule()
 	{
 		if (!extension_loaded('mcrypt')) {
 			throw new InvalidConfigException('The mcrypt PHP extension is not installed.');
@@ -267,7 +271,7 @@ class BaseSecurity
 	 * @return string The password hash string, ASCII and not longer than 64 characters.
 	 * @see validatePassword()
 	 */
-	public static function generatePasswordHash($password, $cost = 13)
+	public function generatePasswordHash($password, $cost = 13)
 	{
 		$salt = static::generateSalt($cost);
 		$hash = crypt($password, $salt);
@@ -287,7 +291,7 @@ class BaseSecurity
 	 * @throws InvalidParamException on bad password or hash parameters or if crypt() with Blowfish hash is not available.
 	 * @see generatePasswordHash()
 	 */
-	public static function validatePassword($password, $hash)
+	public function validatePassword($password, $hash)
 	{
 		if (!is_string($password) || $password === '') {
 			throw new InvalidParamException('Password must be a string and cannot be empty.');
@@ -325,7 +329,7 @@ class BaseSecurity
 	 * @return string the random salt value.
 	 * @throws InvalidParamException if the cost parameter is not between 4 and 30
 	 */
-	protected static function generateSalt($cost = 13)
+	protected function generateSalt($cost = 13)
 	{
 		$cost = (int)$cost;
 		if ($cost < 4 || $cost > 31) {

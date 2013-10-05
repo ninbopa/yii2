@@ -23,6 +23,11 @@ use Yii;
 class BaseFileHelper
 {
 	/**
+	 *
+	 */
+	private $mimeTyps = null;
+
+	/**
 	 * Normalizes a file/directory path.
 	 * After normalization, the directory separators in the path will be `DIRECTORY_SEPARATOR`,
 	 * and any trailing directory separators will be removed. For example, '/home\demo/' on Linux
@@ -31,7 +36,7 @@ class BaseFileHelper
 	 * @param string $ds the directory separator to be used in the normalized result. Defaults to `DIRECTORY_SEPARATOR`.
 	 * @return string the normalized file/directory path
 	 */
-	public static function normalizePath($path, $ds = DIRECTORY_SEPARATOR)
+	public function normalizePath($path, $ds = DIRECTORY_SEPARATOR)
 	{
 		return rtrim(strtr($path, array('/' => $ds, '\\' => $ds)), $ds);
 	}
@@ -57,7 +62,7 @@ class BaseFileHelper
 	 * @return string the matching localized file, or the original file if the localized version is not found.
 	 * If the target and the source language codes are the same, the original file will be returned.
 	 */
-	public static function localize($file, $language = null, $sourceLanguage = null)
+	public function localize($file, $language = null, $sourceLanguage = null)
 	{
 		if ($language === null) {
 			$language = Yii::$app->language;
@@ -84,7 +89,7 @@ class BaseFileHelper
 	 * `finfo_open()` cannot determine it.
 	 * @return string the MIME type (e.g. `text/plain`). Null is returned if the MIME type cannot be determined.
 	 */
-	public static function getMimeType($file, $magicFile = null, $checkExtension = true)
+	public function getMimeType($file, $magicFile = null, $checkExtension = true)
 	{
 		if (function_exists('finfo_open')) {
 			$info = finfo_open(FILEINFO_MIME_TYPE, $magicFile);
@@ -108,19 +113,19 @@ class BaseFileHelper
 	 * If this is not set, the default file aliased by `@yii/util/mimeTypes.php` will be used.
 	 * @return string the MIME type. Null is returned if the MIME type cannot be determined.
 	 */
-	public static function getMimeTypeByExtension($file, $magicFile = null)
+	public function getMimeTypeByExtension($file, $magicFile = null)
 	{
-		static $mimeTypes = array();
+		$this->mimeTyps = array();
 		if ($magicFile === null) {
 			$magicFile = __DIR__ . '/mimeTypes.php';
 		}
-		if (!isset($mimeTypes[$magicFile])) {
-			$mimeTypes[$magicFile] = require($magicFile);
+		if (!isset($this->mimeTyps[$magicFile])) {
+			$this->mimeTyps[$magicFile] = require($magicFile);
 		}
 		if (($ext = pathinfo($file, PATHINFO_EXTENSION)) !== '') {
 			$ext = strtolower($ext);
-			if (isset($mimeTypes[$magicFile][$ext])) {
-				return $mimeTypes[$magicFile][$ext];
+			if (isset($this->mimeTyps[$magicFile][$ext])) {
+				return $this->mimeTyps[$magicFile][$ext];
 			}
 		}
 		return null;
@@ -163,7 +168,7 @@ class BaseFileHelper
 	 *   The signature of the callback should be: `function ($from, $to)`, where `$from` is the sub-directory or
 	 *   file copied from, while `$to` is the copy target.
 	 */
-	public static function copyDirectory($src, $dst, $options = array())
+	public function copyDirectory($src, $dst, $options = array())
 	{
 		if (!is_dir($dst)) {
 			static::createDirectory($dst, isset($options['dirMode']) ? $options['dirMode'] : 0775, true);
@@ -200,7 +205,7 @@ class BaseFileHelper
 	 * Removes a directory (and all its content) recursively.
 	 * @param string $dir the directory to be deleted recursively.
 	 */
-	public static function removeDirectory($dir)
+	public function removeDirectory($dir)
 	{
 		if (!is_dir($dir) || !($handle = opendir($dir))) {
 			return;
@@ -247,7 +252,7 @@ class BaseFileHelper
 	 * - recursive: boolean, whether the files under the subdirectories should also be looked for. Defaults to true.
 	 * @return array files found under the directory. The file list is sorted.
 	 */
-	public static function findFiles($dir, $options = array())
+	public function findFiles($dir, $options = array())
 	{
 		$list = array();
 		$handle = opendir($dir);
@@ -275,7 +280,7 @@ class BaseFileHelper
 	 * the supported options.
 	 * @return boolean whether the file or directory satisfies the filtering options.
 	 */
-	public static function filterPath($path, $options)
+	public function filterPath($path, $options)
 	{
 		if (isset($options['filter'])) {
 			$result = call_user_func($options['filter'], $path);
@@ -320,7 +325,7 @@ class BaseFileHelper
 	 * @param boolean $recursive whether to create parent directories if they do not exist.
 	 * @return boolean whether the directory is created successfully
 	 */
-	public static function createDirectory($path, $mode = 0775, $recursive = true)
+	public function createDirectory($path, $mode = 0775, $recursive = true)
 	{
 		if (is_dir($path)) {
 			return true;

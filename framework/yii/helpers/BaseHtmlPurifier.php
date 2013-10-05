@@ -23,7 +23,7 @@ class BaseHtmlPurifier
 	 * @param array|null $config
 	 * @return string
 	 */
-	public static function process($content, $config = null)
+	public function process($content, $config = null)
 	{
 		$configInstance = \HTMLPurifier_Config::create($config);
 		$configInstance->autoFinalize = false;

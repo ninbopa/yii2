@@ -22,7 +22,7 @@ class BaseMarkdown
 	/**
 	 * @var MarkdownExtra
 	 */
-	protected static $markdown;
+	protected $markdown;
 
 	/**
 	 * Converts markdown into HTML
@@ -31,14 +31,14 @@ class BaseMarkdown
 	 * @param array $config
 	 * @return string
 	 */
-	public static function process($content, $config = array())
+	public function process($content, $config = array())
 	{
-		if (static::$markdown === null) {
-			static::$markdown = new MarkdownExtra();
+		if ($this->markdown === null) {
+			$this->markdown = new MarkdownExtra();
 		}
 		foreach ($config as $name => $value) {
-			static::$markdown->{$name} = $value;
+			$this->markdown->{$name} = $value;
 		}
-		return static::$markdown->transform($content);
+		return $this->markdown->transform($content);
 	}
 }
